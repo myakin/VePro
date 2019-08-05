@@ -30,7 +30,7 @@ public class GameController : MonoBehaviour {
 
     private void MakeGrid() {
         float cellSize = GetCellSize();
-        Vector3 gridStartPoint = backgroundObject.position - (backgroundObject.right * (cellSize * (gridSize.x / 2)));
+        Vector3 gridStartPoint = backgroundObject.position - (backgroundObject.right * (cellSize * (gridSize.x / 4)));
         //GameObject s = new GameObject("Origin");
         //s.transform.position = gridStartPoint;
 
@@ -38,7 +38,7 @@ public class GameController : MonoBehaviour {
             for (int x = 0; x < gridSize.x; x++) {
                 float multiplierY = x % 2==0 ? 1 : 2;
 
-                Vector2 gridInsertionPoint = new Vector2((cellSize * 0.5f) * (1 + 1.5f * x ) , (cellSize * 0.5f) * sqrRoot3 * multiplierY);
+                Vector2 gridInsertionPoint = new Vector2((cellSize * 0.5f) * (1 + 1.5f * x ) , (cellSize * 0.5f) * sqrRoot3 * 0.5f * multiplierY);
                 Vector3 gridWorldPoint = gridStartPoint + (backgroundObject.right * gridInsertionPoint.x) + (backgroundObject.up * gridInsertionPoint.y);
 
                 if (gridInsertionPoint.x < cellSize * gridSize.x) {
@@ -73,7 +73,7 @@ public class GameController : MonoBehaviour {
 
         float platformLength = backgroundObject.GetComponent<MeshRenderer>().bounds.max.x + Mathf.Abs(backgroundObject.GetComponent<MeshRenderer>().bounds.min.x);
         //float unitLength = (platformLength / gridSize.x) * (2f/5f);
-        float unitLength = platformLength / gridSize.x;
+        float unitLength = platformLength / (gridSize.x / 2f);
         return unitLength;
 
 
