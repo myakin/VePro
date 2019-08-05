@@ -8,9 +8,12 @@ public class GameController : MonoBehaviour {
 
     public Vector2 gridSize = new Vector2(8, 9);
     public Transform backgroundObject;
+    public Transform outliner;
+    private Transform rotator;
 
     private float sqrRoot3 = Mathf.Sqrt(3);
 
+    private Dictionary<string, GridHexPair> gridsAndContents = new Dictionary<string, GridHexPair>();
 
     private void Awake() {
         if (GameController.gc==null) {
@@ -73,6 +76,8 @@ public class GameController : MonoBehaviour {
                     hex = Instantiate(Resources.Load("HexPurple") as GameObject, gridObject.transform);
                 }
 
+                GridHexPair newGridHexPair = new GridHexPair(gridObject, hex);
+                gridsAndContents.Add(x.ToString() + "-" + y.ToString(), newGridHexPair);
 
                 // now that we have our grid, we have to re-scale our object to fit perfectly to the grid
                 // since all of our hex objects are designed by 1 unit side length, it is ok to simply scale the object by sideLength, which is our calculated side length
@@ -100,5 +105,57 @@ public class GameController : MonoBehaviour {
     private float GetRowLength() {
         return backgroundObject.GetComponent<MeshRenderer>().bounds.max.x + Mathf.Abs(backgroundObject.GetComponent<MeshRenderer>().bounds.min.x);
     }
+    /*
+    public void SetRotatorPositionForHexObject(HexObject aHexObjectManager) {
+        rotator.transform.position = aHexObjectManager.GetCornerPos();
+        rotator.transform.localScale = new Vector3(aHexObjectManager.sideLength, aHexObjectManager.sideLength, aHexObjectManager.sideLength);
+        rotator.gameObject.SetActive(true);
+    }
+    */
+    public void SetOutlinerPosition(HexObject aHexObjectManager) {
+        outliner.position = aHexObjectManager.transform.position;
+        outliner.rotation = Quaternion.Euler(0, 0, aHexObjectManager.ExecuteRotatorAngle());
+        outliner.localScale = new Vector3(aHexObjectManager.GetSideLength(), aHexObjectManager.GetSideLength(), aHexObjectManager.GetSideLength());
+        outliner.gameObject.SetActive(true);
+        PrepareForRotation(aHexObjectManager);
+    }
+    private void PrepareForRotation(HexObject aHexObjectManager) {
+        // rotation has to be made by parenting hex objects under a GameObject whose scale is Vector3.one
+        // otherwise, deformations on meshes will be seen
+        // so, for this, we will first SetRotationPivot(), then aHexObjectManager.GetSelectedGridIndexes(), 
+        // then serch for those indexes in gridsAndContents, and parent the values from gridsAndContents under rotator
+        // and set rotator's RotationManager values
+        SetRotationPivot();
+
+        Vector2[] selectedGrids = aHexObjectManager.GetSelectedGridIndexes();
+        for (int i = 0; i < selectedGrids.Length; i++) {
+            GameObject targetObj = gridsAndContents[selectedGrids[i].x.ToString() + "-" + selectedGrids[i].y].hex;
+            targetObj.transform.SetParent(rotator);
+            rotator.GetComponent<RotationManager>().SetGrid(selectedGrids[i], i);
+            rotator.GetComponent<RotationManager>().SetObject(targetObj, i);
+        }
+
+    }
+ 
+
+    private void SetRotationPivot() {
+        if (rotator==null) {
+            rotator = new GameObject("Rotator").transform;
+            rotator.gameObject.AddComponent<RotationManager>();
+        }
+        rotator.position = outliner.transform.GetChild(0).position;
+        rotator.rotation = outliner.transform.GetChild(0).rotation;
+    }
+
+    public void DumpOutlinedObjects() {
+        if (rotator!=null) {
+            for (int i = 0; i < rotator.GetComponent<RotationManager>().grids.Length; i++) {
+                string key = rotator.GetComponent<RotationManager>().grids[i].x.ToString() + "-" + rotator.GetComponent<RotationManager>().grids[i].y.ToString();
+                gridsAndContents[key].hex = rotator.GetComponent<RotationManager>().attachedObjects[i];
+                gridsAndContents[key].hex.transform.SetParent(gridsAndContents[key].grid.transform);
+            }
+        }
+    }
+
 
 }
