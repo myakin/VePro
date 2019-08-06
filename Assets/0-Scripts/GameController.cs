@@ -9,11 +9,12 @@ public class GameController : MonoBehaviour {
     public Vector2 gridSize = new Vector2(8, 9);
     public Transform backgroundObject;
     public Transform outliner;
+    public HexObject touchFocusedOnThisObject;
     private Transform rotator;
-
     private float sqrRoot3 = Mathf.Sqrt(3);
+    //private bool isSelectionCoroutineRunning;
 
-    private Dictionary<string, GridHexPair> gridsAndContents = new Dictionary<string, GridHexPair>();
+    public Dictionary<Vector2, GridHexPair> gridsAndContents = new Dictionary<Vector2, GridHexPair>();
 
     private void Awake() {
         if (GameController.gc==null) {
@@ -72,12 +73,19 @@ public class GameController : MonoBehaviour {
                     hex = Instantiate(Resources.Load("HexGreen") as GameObject, gridObject.transform);
                 } else if (randomlyDefinedColorChoice == 2) {
                     hex = Instantiate(Resources.Load("HexRed") as GameObject, gridObject.transform);
-                } else if(randomlyDefinedColorChoice == 3) {
+                } else if (randomlyDefinedColorChoice == 3) {
                     hex = Instantiate(Resources.Load("HexPurple") as GameObject, gridObject.transform);
                 }
 
+                // this is a helper Dictionary that we only need on start up: 
+                // we'll use this to check if neightbor indexes are generated for each hex object
+                // then we eill assign the hex object's neighbors if check passes
                 GridHexPair newGridHexPair = new GridHexPair(gridObject, hex);
-                gridsAndContents.Add(x.ToString() + "-" + y.ToString(), newGridHexPair);
+                gridsAndContents.Add(new Vector2(x,y), newGridHexPair);
+
+                // set neighbor indexes
+                hex.GetComponent<HexObject>().parentingGrid = gridObject.transform;
+                hex.GetComponent<HexObject>().SetNeighborIndexes();
 
                 // now that we have our grid, we have to re-scale our object to fit perfectly to the grid
                 // since all of our hex objects are designed by 1 unit side length, it is ok to simply scale the object by sideLength, which is our calculated side length
@@ -85,7 +93,14 @@ public class GameController : MonoBehaviour {
 
             }
         }
+
+        // set neighbors
+        foreach (KeyValuePair<Vector2, GridHexPair> items in gridsAndContents) {
+            UpdateObjectNeighbors(items.Value.hex.GetComponent<HexObject>());
+        }
     }
+
+
 
     private float GetSideLength() {
         // let a be the side length of a hexagon => if hexagonal tiles are designed as side by side formation,
@@ -105,56 +120,108 @@ public class GameController : MonoBehaviour {
     private float GetRowLength() {
         return backgroundObject.GetComponent<MeshRenderer>().bounds.max.x + Mathf.Abs(backgroundObject.GetComponent<MeshRenderer>().bounds.min.x);
     }
+
     /*
-    public void SetRotatorPositionForHexObject(HexObject aHexObjectManager) {
-        rotator.transform.position = aHexObjectManager.GetCornerPos();
-        rotator.transform.localScale = new Vector3(aHexObjectManager.sideLength, aHexObjectManager.sideLength, aHexObjectManager.sideLength);
-        rotator.gameObject.SetActive(true);
+    public void SetOutlinerPositionWithDelay(HexObject aHexObjectManager, float aDelayTime) {
+        touchFocusedOnThisObject = aHexObjectManager;
+        Invoke("SetOutlinerPosition", aDelayTime);
+    }
+
+
+    public void SetOutlinerPosition() {
+        if (!InputManager.im.isDragging) {
+            outliner.position = touchFocusedOnThisObject.transform.position;
+            outliner.rotation = Quaternion.Euler(0, 0, touchFocusedOnThisObject.ExecuteRotatorAngle());
+            outliner.localScale = new Vector3(touchFocusedOnThisObject.GetSideLength(), touchFocusedOnThisObject.GetSideLength(), touchFocusedOnThisObject.GetSideLength());
+            outliner.gameObject.SetActive(true);
+            Debug.Log("Object selection triggered in GameController");
+        }
+    }
+    */
+    /*
+    public void SelectObject(HexObject aHexObjectManager) {
+        if (!isSelectionCoroutineRunning) {
+            StartCoroutine(SetOutlinerPosition(aHexObjectManager));
+        }
+    }
+    private IEnumerator SetOutlinerPosition(HexObject aHexObjectManager) {
+        isSelectionCoroutineRunning = true;
+        yield return new WaitForSeconds(0.3f);
+        if (!InputManager.im.isDragging) {
+            touchFocusedOnThisObject = aHexObjectManager;
+            outliner.position = touchFocusedOnThisObject.transform.position;
+            outliner.rotation = Quaternion.Euler(0, 0, touchFocusedOnThisObject.ExecuteRotatorAngle());
+            outliner.localScale = new Vector3(touchFocusedOnThisObject.GetSideLength(), touchFocusedOnThisObject.GetSideLength(), touchFocusedOnThisObject.GetSideLength());
+            outliner.gameObject.SetActive(true);
+            Debug.Log("Object selection triggered in GameController");
+        }
+        isSelectionCoroutineRunning = false;
     }
     */
     public void SetOutlinerPosition(HexObject aHexObjectManager) {
-        outliner.position = aHexObjectManager.transform.position;
-        outliner.rotation = Quaternion.Euler(0, 0, aHexObjectManager.ExecuteRotatorAngle());
-        outliner.localScale = new Vector3(aHexObjectManager.GetSideLength(), aHexObjectManager.GetSideLength(), aHexObjectManager.GetSideLength());
-        outliner.gameObject.SetActive(true);
-        PrepareForRotation(aHexObjectManager);
-    }
-    private void PrepareForRotation(HexObject aHexObjectManager) {
-        // rotation has to be made by parenting hex objects under a GameObject whose scale is Vector3.one
-        // otherwise, deformations on meshes will be seen
-        // so, for this, we will first SetRotationPivot(), then aHexObjectManager.GetSelectedGridIndexes(), 
-        // then serch for those indexes in gridsAndContents, and parent the values from gridsAndContents under rotator
-        // and set rotator's RotationManager values
-        SetRotationPivot();
-
-        Vector2[] selectedGrids = aHexObjectManager.GetSelectedGridIndexes();
-        for (int i = 0; i < selectedGrids.Length; i++) {
-            GameObject targetObj = gridsAndContents[selectedGrids[i].x.ToString() + "-" + selectedGrids[i].y].hex;
-            targetObj.transform.SetParent(rotator);
-            rotator.GetComponent<RotationManager>().SetGrid(selectedGrids[i], i);
-            rotator.GetComponent<RotationManager>().SetObject(targetObj, i);
+        if (!InputManager.im.isDragging) {
+            touchFocusedOnThisObject = aHexObjectManager;
+            outliner.position = touchFocusedOnThisObject.transform.position;
+            outliner.rotation = Quaternion.Euler(0, 0, touchFocusedOnThisObject.ExecuteRotatorAngle());
+            outliner.localScale = new Vector3(touchFocusedOnThisObject.GetSideLength(), touchFocusedOnThisObject.GetSideLength(), touchFocusedOnThisObject.GetSideLength());
+            outliner.gameObject.SetActive(true);
+            Debug.Log("Object selection triggered in GameController");
         }
 
     }
- 
 
-    private void SetRotationPivot() {
-        if (rotator==null) {
+
+    private void PrepareRotator(HexObject aHexObjectManager) {
+        // rotation has to be made by parenting hex objects under a GameObject whose scale is Vector3.one
+        // otherwise, deformations on meshes will be seen due to the localScale of the outLiner
+        // so, for this, we will first set rotation pivot, then aHexObjectManager.GetSelectedGridIndexes(), 
+        // then serch for those indexes in gridsAndContents, and parent the values from gridsAndContents under rotator
+        // and set rotator's RotationManager values
+        if (rotator == null) {
             rotator = new GameObject("Rotator").transform;
             rotator.gameObject.AddComponent<RotationManager>();
         }
         rotator.position = outliner.transform.GetChild(0).position;
         rotator.rotation = outliner.transform.GetChild(0).rotation;
+
+        Transform[] selectedNeighbors = aHexObjectManager.GetSelectedNeighbors();
+        selectedNeighbors[0].SetParent(rotator); // this is always original
+        selectedNeighbors[1].SetParent(rotator); // this is always wing1
+        selectedNeighbors[2].SetParent(rotator); // this is always wing2 ==> the order of the whole is counter-clockwise 
+
+        rotator.GetComponent<RotationManager>().SetObjects(selectedNeighbors[0], selectedNeighbors[1], selectedNeighbors[2]);
+
     }
+
+    public void RotateObjects() {
+        PrepareRotator(touchFocusedOnThisObject);
+        // we have to determine, first, if user is rotating clockwise or counter-clockwise
+        Vector2 rotatorScreenCoords = Camera.main.WorldToScreenPoint(rotator.position);
+        float angle = Vector2.SignedAngle(InputManager.im.touchDownPos - rotatorScreenCoords, InputManager.im.touchMovePos - rotatorScreenCoords);
+        bool isRotatingClockwise = angle < 0 ? false : true;
+
+        // begin rotation
+        rotator.GetComponent<RotationManager>().RotateOnce(outliner, isRotatingClockwise);
+    }
+
 
     public void DumpOutlinedObjects() {
         if (rotator!=null) {
-            for (int i = 0; i < rotator.GetComponent<RotationManager>().grids.Length; i++) {
-                string key = rotator.GetComponent<RotationManager>().grids[i].x.ToString() + "-" + rotator.GetComponent<RotationManager>().grids[i].y.ToString();
-                gridsAndContents[key].hex = rotator.GetComponent<RotationManager>().attachedObjects[i];
-                gridsAndContents[key].hex.transform.SetParent(gridsAndContents[key].grid.transform);
+            for (int i = 0; i < rotator.childCount; i++) {
+                Transform newParent = rotator.GetChild(i).GetComponent<HexObject>().parentingGrid;
+                rotator.GetChild(i).SetParent(newParent);
             }
         }
+    }
+
+
+    public void UpdateObjectNeighbors(HexObject aHexObject) {
+        aHexObject.neighbor30 = gridsAndContents.ContainsKey(aHexObject.neighborIndex30) ? gridsAndContents[aHexObject.neighborIndex30].hex.transform : null;
+        aHexObject.neighbor90 = gridsAndContents.ContainsKey(aHexObject.neighborIndex90) ? gridsAndContents[aHexObject.neighborIndex90].hex.transform : null;
+        aHexObject.neighbor120 = gridsAndContents.ContainsKey(aHexObject.neighborIndex120) ? gridsAndContents[aHexObject.neighborIndex120].hex.transform : null;
+        aHexObject.neighbor210 = gridsAndContents.ContainsKey(aHexObject.neighborIndex210) ? gridsAndContents[aHexObject.neighborIndex210].hex.transform : null;
+        aHexObject.neighbor270 = gridsAndContents.ContainsKey(aHexObject.neighborIndex270) ? gridsAndContents[aHexObject.neighborIndex270].hex.transform : null;
+        aHexObject.neighbor330 = gridsAndContents.ContainsKey(aHexObject.neighborIndex330) ? gridsAndContents[aHexObject.neighborIndex330].hex.transform : null;
     }
 
 

@@ -3,12 +3,30 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class InputManager : MonoBehaviour {
-    
-    private Camera mainCam;
-    private Vector2 touchDownPos;
-    private Vector2 touchMovePos;
-    private Transform objectTouched;
+
+    public static InputManager im;
+
     public bool isRotationOn;
+    public bool isDragging;
+    public Vector2 dragDirection;
+
+    private Camera mainCam;
+    public Vector2 touchDownPos;
+    public Vector2 touchMovePos;
+    private Transform objectTouched;
+    private bool isSelectionBeingDelayed;
+
+    private void Awake() {
+        if (InputManager.im==null) {
+            InputManager.im = this;
+        } else {
+            if (InputManager.im!=this) {
+                Destroy(InputManager.im.gameObject);
+                InputManager.im = this;
+            }
+        }
+        DontDestroyOnLoad(InputManager.im.gameObject);
+    }
 
     private void Start() {
         mainCam = Camera.main;
@@ -26,21 +44,35 @@ public class InputManager : MonoBehaviour {
                     objectTouched = hit.transform;
                     // Debug.Log(objectTouched.gameObject.name);
                     if (objectTouched.tag=="Hex") {
-                        GameController.gc.SetOutlinerPosition(objectTouched.GetComponent<HexObject>());
+                        if (!isSelectionBeingDelayed) {
+                            isSelectionBeingDelayed = true;
+                            StartCoroutine(ExecuteSelectionWithDelay(objectTouched.GetComponent<HexObject>()));
+                            Debug.Log("selected object");
+                        }
+                        // GameController.gc.SetOutlinerPositionWithDelay(objectTouched.GetComponent<HexObject>(),0.3f);
+                        // GameController.gc.SelectObject(objectTouched.GetComponent<HexObject>());
+
                     }
 
 
                 }
             } else if (playerTouch.phase == TouchPhase.Ended) {
-                Debug.Log("Performed a touch up");
+                isDragging = false;
+
+                //Debug.Log("Performed a touch up");
 
             } else if (playerTouch.phase == TouchPhase.Moved) {
                 touchMovePos = Input.mousePosition;
-                if ((touchMovePos - touchDownPos).sqrMagnitude>4f) {
+                dragDirection = touchMovePos - touchDownPos;
+                // Debug.Log(dragDirection.sqrMagnitude);
+                if (dragDirection.sqrMagnitude>1000f) {
+                    isDragging = true;
                     if (!isRotationOn) {
-
+                        GameController.gc.RotateObjects();
+                        isRotationOn = true;
+                        Debug.Log("is rotating");
                     }
-                    // Debug.Log("Performing a drag on " + objectTouched.gameObject.name);
+                    //Debug.Log("is dragging");
                 }
 
             }
@@ -48,6 +80,13 @@ public class InputManager : MonoBehaviour {
 
     }
 
-
+    private IEnumerator ExecuteSelectionWithDelay(HexObject aHexObject) {
+        yield return new WaitForSeconds(0.3f);
+        if (!isDragging) {
+            GameController.gc.SetOutlinerPosition(aHexObject);
+        }
+        StopCoroutine(ExecuteSelectionWithDelay(aHexObject));
+        isSelectionBeingDelayed = false;
+    }
 
 }
