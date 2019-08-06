@@ -85,9 +85,9 @@ public class HexObject : MonoBehaviour {
         Transform obj1 = null;
         Transform obj2 = null;
 
-        float outlinerAngle = (int)GameController.gc.outliner.rotation.eulerAngles.z;
-        activeAngleIndex = System.Array.IndexOf(angles, outlinerAngle);
-        Debug.Log(outlinerAngle + " " + activeAngleIndex);
+        //float outlinerAngle = (int)GameController.gc.outliner.rotation.eulerAngles.z;
+        //activeAngleIndex = System.Array.IndexOf(angles, outlinerAngle);
+        //Debug.Log(outlinerAngle + " " + activeAngleIndex);
 
         switch (angles[activeAngleIndex]) {
             case 120:
@@ -128,9 +128,9 @@ public class HexObject : MonoBehaviour {
     public void UpdateAngleActiveIndex(bool isRotatingClockwise) {
         float newAngle = angles[activeAngleIndex];
         if (isRotatingClockwise) {
-            newAngle -= 60;
+            newAngle += 120;
         } else {
-            newAngle += 60;
+            newAngle -= 120;
         }
         activeAngleIndex = System.Array.IndexOf(angles, newAngle);
     }

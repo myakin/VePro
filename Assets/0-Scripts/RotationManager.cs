@@ -56,14 +56,12 @@ public class RotationManager : MonoBehaviour {
         RotateObjectGrids();
         UpdateGameControllerDictionary();
         UpdateHexNeighbors();
-        //originalObj.GetComponent<HexObject>().UpdateAngleActiveIndex(isRotatingClockwise);
+        originalObj.GetComponent<HexObject>().UpdateAngleActiveIndex(isRotatingClockwise);
         UnParentObjs();
         InputManager.im.isRotationOn = false;
         //GameController.gc.DumpOutlinedObjects();
 
         isAnimating = false;
-
-
 
         anOutlinerBody.parent.SetParent(outlinerOldParent);
 

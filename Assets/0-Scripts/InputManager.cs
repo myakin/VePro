@@ -42,7 +42,7 @@ public class InputManager : MonoBehaviour {
 
                 if (Physics.Raycast(ray, out hit, 100f, 1<<11, QueryTriggerInteraction.Ignore)) {
                     objectTouched = hit.transform;
-                    Debug.Log(objectTouched.gameObject.name);
+                    //Debug.Log(objectTouched.gameObject.name);
                     if (objectTouched.tag=="Hex") {
                         if (!isSelectionBeingDelayed) {
                             isSelectionBeingDelayed = true;
