@@ -63,6 +63,8 @@ public class RotationManager : MonoBehaviour {
 
         isAnimating = false;
 
+
+
         anOutlinerBody.parent.SetParent(outlinerOldParent);
 
     }

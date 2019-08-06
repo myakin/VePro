@@ -40,9 +40,9 @@ public class InputManager : MonoBehaviour {
                 RaycastHit hit;
                 Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
 
-                if (Physics.Raycast(ray, out hit, 100f, 1<<11, QueryTriggerInteraction.Ignore)) {
+                if (Physics.Raycast(ray, out hit)) {
                     objectTouched = hit.transform;
-                    //Debug.Log(objectTouched.gameObject.name);
+                    // Debug.Log(objectTouched.gameObject.name);
                     if (objectTouched.tag=="Hex") {
                         if (!isSelectionBeingDelayed) {
                             isSelectionBeingDelayed = true;
