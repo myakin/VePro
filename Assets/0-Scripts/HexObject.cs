@@ -133,6 +133,7 @@ public class HexObject : MonoBehaviour {
         } else {
             newAngle -= 120;
         }
+        newAngle = newAngle < 0 ? newAngle + 360 : (newAngle > 360 ? newAngle - 360 : newAngle);
         activeAngleIndex = System.Array.IndexOf(angles, newAngle);
     }
 

@@ -42,40 +42,37 @@ public class InputManager : MonoBehaviour {
 
                 if (Physics.Raycast(ray, out hit)) {
                     objectTouched = hit.transform;
-                    // Debug.Log(objectTouched.gameObject.name);
-                    if (objectTouched.tag=="Hex") {
-                        if (!isSelectionBeingDelayed) {
-                            isSelectionBeingDelayed = true;
-                            StartCoroutine(ExecuteSelectionWithDelay(objectTouched.GetComponent<HexObject>()));
-                            Debug.Log("selected object");
-                        }
-                        // GameController.gc.SetOutlinerPositionWithDelay(objectTouched.GetComponent<HexObject>(),0.3f);
-                        // GameController.gc.SelectObject(objectTouched.GetComponent<HexObject>());
-
-                    }
-
-
                 }
-            } else if (playerTouch.phase == TouchPhase.Ended) {
+            } 
+            if (playerTouch.phase == TouchPhase.Ended) {
+
+                if (objectTouched.tag == "Hex" && !isDragging) {
+                    GameController.gc.SetOutlinerPosition(objectTouched.GetComponent<HexObject>());
+                    Debug.Log("selected object");
+                }
+
                 isDragging = false;
 
-                //Debug.Log("Performed a touch up");
 
-            } else if (playerTouch.phase == TouchPhase.Moved) {
+            } 
+            if (playerTouch.phase == TouchPhase.Moved) {
                 touchMovePos = Input.mousePosition;
                 dragDirection = touchMovePos - touchDownPos;
-                // Debug.Log(dragDirection.sqrMagnitude);
-                if (dragDirection.sqrMagnitude>1000f) {
+                //Debug.Log(dragDirection.sqrMagnitude);
+                if (dragDirection.sqrMagnitude > 3000f) {
                     isDragging = true;
+
                     if (!isRotationOn) {
                         GameController.gc.RotateObjects();
                         isRotationOn = true;
                         Debug.Log("is rotating");
                     }
+
                     //Debug.Log("is dragging");
                 }
 
             }
+
         }
 
     }

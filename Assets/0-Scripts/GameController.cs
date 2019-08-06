@@ -159,14 +159,14 @@ public class GameController : MonoBehaviour {
     }
     */
     public void SetOutlinerPosition(HexObject aHexObjectManager) {
-        if (!InputManager.im.isDragging) {
+        //if (!InputManager.im.isDragging) {
             touchFocusedOnThisObject = aHexObjectManager;
             outliner.position = touchFocusedOnThisObject.transform.position;
             outliner.rotation = Quaternion.Euler(0, 0, touchFocusedOnThisObject.ExecuteRotatorAngle());
             outliner.localScale = new Vector3(touchFocusedOnThisObject.GetSideLength(), touchFocusedOnThisObject.GetSideLength(), touchFocusedOnThisObject.GetSideLength());
             outliner.gameObject.SetActive(true);
             Debug.Log("Object selection triggered in GameController");
-        }
+        //}
 
     }
 
