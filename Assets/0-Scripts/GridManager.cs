@@ -6,4 +6,5 @@ public class GridManager : MonoBehaviour {
 
     public Vector2 id;
 
+
 }

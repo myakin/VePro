@@ -21,14 +21,13 @@ public class HexObject : MonoBehaviour {
     public Vector2 neighborIndex330;
 
 
-
-
     public int[] sides;
     public float sideLength;
     private float[] angles = new float[] { 120, 60, 0, 300, 240, 180 }; // 0=>120, 1=>60, 2=>0, 3=>300, 4=>240, 5=>180
     private int activeAngleIndex = 0;
 
     private float sqrRoot3 = Mathf.Sqrt(3);
+
 
     public float ExecuteRotatorAngle() {
         activeAngleIndex++;
