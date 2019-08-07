@@ -35,11 +35,11 @@ public class RotationManager : MonoBehaviour {
 
 
     private IEnumerator AnimateRotation(Transform anOutlinerBody, int aRotationCount) {
-        Quaternion targetRotation = transform.rotation * Quaternion.Euler(0, 0, 120f);
-        Quaternion targetOutlinerRotation = anOutlinerBody.rotation * Quaternion.Euler(0, 0, 120f);
+        Quaternion targetRotation =  Quaternion.Euler(0, 0, (int)transform.eulerAngles.z + 120f);
+        Quaternion targetOutlinerRotation = Quaternion.Euler(0, 0, (int)anOutlinerBody.eulerAngles.z + 120f);
         if (!isRotatingClockwise) {
-            targetRotation = transform.rotation * Quaternion.Euler(0, 0, -120f);
-            targetOutlinerRotation = anOutlinerBody.rotation * Quaternion.Euler(0, 0, -120f);
+            targetRotation = Quaternion.Euler(0, 0, (int)transform.eulerAngles.z - 120f);
+            targetOutlinerRotation = Quaternion.Euler(0, 0, (int)anOutlinerBody.eulerAngles.z - 120f);
         }
 
         float timer = 0;
@@ -66,6 +66,7 @@ public class RotationManager : MonoBehaviour {
             aRotationCount++;
             yield return AnimateRotation(anOutlinerBody, aRotationCount);
         }
+
     }
 
     private void RotateObjectGrids() {
