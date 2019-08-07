@@ -50,11 +50,14 @@ public class RotationManager : MonoBehaviour {
             timer += Time.deltaTime;
             yield return null;
         }
+        transform.rotation = targetRotation;
+        anOutlinerBody.rotation = targetOutlinerRotation;
 
         RotateObjectGrids();
         UpdateGameControllerDictionary();
         UpdateHexNeighbors();
         originalObj.GetComponent<HexObject>().UpdateAngleActiveIndex(isRotatingClockwise);
+
 
         if (CheckForBlowingObjects() || aRotationCount==2) { // end rotation
             StopCoroutine(AnimateRotation(anOutlinerBody, aRotationCount));
@@ -100,6 +103,7 @@ public class RotationManager : MonoBehaviour {
         GameController.gc.UpdateObjectNeighbors(wing1Obj.GetComponent<HexObject>());
         GameController.gc.UpdateObjectNeighbors(wing2Obj.GetComponent<HexObject>());
 
+        //Debug.Log(CheckForBlowingObjects());
     }
 
     private void ParentObjs() {
@@ -108,22 +112,50 @@ public class RotationManager : MonoBehaviour {
         wing2Obj.SetParent(transform);
     }
 
+    private void BlowObjects(Transform anOriginalObject, Transform[] aNeighborList) {
+        anOriginalObject.SetParent(null);
+        anOriginalObject.gameObject.SetActive(false);
+        Transform gridForOriginal = anOriginalObject.GetComponent<HexObject>().parentingGrid;
+        GameController.gc.generationPool.Add(anOriginalObject.gameObject);
+        //TODO: place a particle effect on this position and activate it
+
+        aNeighborList[0].SetParent(null);
+        aNeighborList[0].gameObject.SetActive(false);
+        Transform neighborGrid0 = aNeighborList[0].GetComponent<HexObject>().parentingGrid;
+        GameController.gc.generationPool.Add(aNeighborList[0].gameObject);
+        //TODO: place a particle effect on this position and activate it
+
+        aNeighborList[1].SetParent(null);
+        aNeighborList[1].gameObject.SetActive(false);
+        Transform neighborGrid1 = aNeighborList[1].GetComponent<HexObject>().parentingGrid;
+        GameController.gc.generationPool.Add(aNeighborList[1].gameObject);
+        //TODO: place a particle effect on this position and activate it
+
+
+        Transform[] emptyGrids = new Transform[] { gridForOriginal, neighborGrid0, neighborGrid1 };
+        GameController.gc.ProcessPostBlowEvents(emptyGrids);
+    }
+
+
     private bool CheckForBlowingObjects() {
         bool somethingBlew = false;
 
         Transform[] originalBlow = ShouldBlow(originalObj);
         if (originalBlow[0]!=null) {
             somethingBlew = true;
+            BlowObjects(originalObj, originalBlow);
         }
 
         Transform[] wing1Blow = ShouldBlow(wing1Obj);
         if (wing1Blow[0] != null) {
             somethingBlew = true;
+            BlowObjects(wing1Obj, wing1Blow);
         }
 
         Transform[] wing2Blow = ShouldBlow(wing2Obj);
         if (wing2Blow[0] != null) {
             somethingBlew = true;
+            BlowObjects(wing2Obj, wing2Blow);
         }
         return somethingBlew;
     }
@@ -136,7 +168,7 @@ public class RotationManager : MonoBehaviour {
         names[4] = aReferenceObject.GetComponent<HexObject>().neighbor270.gameObject.name.Substring(0, 6);
         names[5] = aReferenceObject.GetComponent<HexObject>().neighbor330.gameObject.name.Substring(0, 6);
 
-        string thisName = transform.gameObject.name.Substring(0, 6);
+        string thisName = aReferenceObject.gameObject.name.Substring(0, 6);
 
         for (int i = 0; i < 6; i++) {
             if (thisName == names[0] && thisName == names[1]) {

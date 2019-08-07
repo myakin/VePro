@@ -48,7 +48,7 @@ public class InputManager : MonoBehaviour {
 
                 if (objectTouched.tag == "Hex" && !isDragging) {
                     GameController.gc.SetOutlinerPosition(objectTouched.GetComponent<HexObject>());
-                    Debug.Log("selected object");
+                    //Debug.Log("selected object");
                 }
 
                 isDragging = false;
@@ -65,7 +65,7 @@ public class InputManager : MonoBehaviour {
                     if (!isRotationOn) {
                         GameController.gc.RotateObjects();
                         isRotationOn = true;
-                        Debug.Log("is rotating");
+                        //Debug.Log("is rotating");
                     }
 
                     //Debug.Log("is dragging");

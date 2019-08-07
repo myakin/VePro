@@ -16,6 +16,8 @@ public class GameController : MonoBehaviour {
 
     public Dictionary<Vector2, GridHexPair> gridsAndContents = new Dictionary<Vector2, GridHexPair>();
 
+    public List<GameObject> generationPool = new List<GameObject>();
+
     private void Awake() {
         if (GameController.gc==null) {
             GameController.gc = this;
@@ -159,15 +161,12 @@ public class GameController : MonoBehaviour {
     }
     */
     public void SetOutlinerPosition(HexObject aHexObjectManager) {
-        //if (!InputManager.im.isDragging) {
-            touchFocusedOnThisObject = aHexObjectManager;
-            outliner.position = touchFocusedOnThisObject.transform.position;
-            outliner.rotation = Quaternion.Euler(0, 0, touchFocusedOnThisObject.ExecuteRotatorAngle());
-            outliner.localScale = new Vector3(touchFocusedOnThisObject.GetSideLength(), touchFocusedOnThisObject.GetSideLength(), touchFocusedOnThisObject.GetSideLength());
-            outliner.gameObject.SetActive(true);
-            Debug.Log("Object selection triggered in GameController");
-        //}
-
+        touchFocusedOnThisObject = aHexObjectManager;
+        outliner.position = touchFocusedOnThisObject.transform.position;
+        outliner.rotation = Quaternion.Euler(0, 0, touchFocusedOnThisObject.ExecuteRotatorAngle());
+        outliner.localScale = new Vector3(touchFocusedOnThisObject.GetSideLength(), touchFocusedOnThisObject.GetSideLength(), touchFocusedOnThisObject.GetSideLength());
+        outliner.gameObject.SetActive(true);
+        //Debug.Log("Object selection triggered in GameController");
     }
 
 
@@ -224,5 +223,77 @@ public class GameController : MonoBehaviour {
         aHexObject.neighbor330 = gridsAndContents.ContainsKey(aHexObject.neighborIndex330) ? gridsAndContents[aHexObject.neighborIndex330].hex.transform : null;
     }
 
+    public void ProcessPostBlowEvents(Transform[] aGridGroup) {
+        // 1. detect empty grids (incoming aGridGroup has these objects)
+        // 2. check if the grid above them are occupied; if not, continue checking until the top row
+        // 3. if occupied, lerp them to this world space
+        // 4. generate new objects at the top of these columns
+        // terminology: when gridCoordinatesOfEmptyGrid is used, index numbers of the grid as integers of x and y axis (which is stored in GridManager) is referred.
+        // when worldSpaceOfGrid is used, it is the unity coordinates of the object
 
+        int[] columnsChecked = new int[aGridGroup.Length]; // we need this not to lerp the same column twice
+        for (int i = 0; i < aGridGroup.Length; i++) {
+            Vector2 gridCoordinatesOfEmptyGrid = aGridGroup[i].GetComponent<GridManager>().id;
+            if (System.Array.IndexOf(columnsChecked, gridCoordinatesOfEmptyGrid.x) ==-1) {
+                Transform aTargetHex;
+                if (CheckIfUpperNeightborGridIsOccupied(aGridGroup[i])) {
+                    aTargetHex = gridsAndContents[new Vector2(gridCoordinatesOfEmptyGrid.x, gridCoordinatesOfEmptyGrid.y + 1)].grid.transform.GetChild(0);
+                } else { // in this case we will look at the grid on 2 upper row and lerp the content down
+                    aTargetHex = gridsAndContents[new Vector2(gridCoordinatesOfEmptyGrid.x, gridCoordinatesOfEmptyGrid.y + 2)].grid.transform.GetChild(0);
+                }
+                columnsChecked[i] = (int)gridCoordinatesOfEmptyGrid.x;
+                StartCoroutine(LerpContentsDownOnColumn(aTargetHex, aGridGroup[i]));
+            }
+        }
+
+    }
+    private bool CheckIfUpperNeightborGridIsOccupied(Transform aGrid) {
+        Vector2 gridCoordinatesOfEmptyGrid = aGrid.GetComponent<GridManager>().id;
+        if (gridCoordinatesOfEmptyGrid.y + 1 < gridSize.y) {
+            if (gridsAndContents[new Vector2(gridCoordinatesOfEmptyGrid.x, gridCoordinatesOfEmptyGrid.y + 1)].grid.transform.childCount > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+    private IEnumerator LerpContentsDownOnColumn(Transform aTargetHex, Transform aTargetGrid) {
+        if (aTargetHex.parent.GetComponent<GridManager>().id.y < gridSize.y) { // execute within the grid system boundaries
+            Vector2 gridCoordinatesOfUpperHex = aTargetHex.parent.GetComponent<GridManager>().id;
+            Transform nextHex = gridCoordinatesOfUpperHex.y + 1 < gridSize.y ? gridsAndContents[new Vector2(gridCoordinatesOfUpperHex.x, gridCoordinatesOfUpperHex.y + 1)].grid.transform.GetChild(0) : null;
+            Vector2 gridCoordinatesOfUpperEmptyGrid = aTargetGrid.GetComponent<GridManager>().id;
+            Transform nextGrid = gridCoordinatesOfUpperEmptyGrid.y + 1 < gridSize.y ? gridsAndContents[new Vector2(gridCoordinatesOfUpperEmptyGrid.x, gridCoordinatesOfUpperEmptyGrid.y + 1)].grid.transform : null;
+
+            Vector3 initialPos = aTargetHex.transform.position;
+            Vector3 finalPos = aTargetGrid.transform.position;
+
+            float timer = 0;
+            float animationDuration = 1f;
+            while (timer < animationDuration) {
+                aTargetHex.transform.position = Vector3.Lerp(initialPos, finalPos, timer / animationDuration);
+                timer += Time.deltaTime;
+                yield return new WaitForSeconds(0.05f);
+            }
+
+            StopCoroutine(LerpContentsDownOnColumn(aTargetHex, aTargetGrid));
+
+            // lerp down the next (upper) hex
+            if (nextHex!=null && nextGrid!=null) {
+                StartCoroutine(LerpContentsDownOnColumn(nextHex, nextGrid));
+            }
+
+
+        } else {
+            StopCoroutine(LerpContentsDownOnColumn(aTargetHex, aTargetGrid));
+
+        }
+    }
+
+
+    public void GenerateNewObjectsForColumn(Transform[] aGridGroup) {
+        // we have to generate new hexes atleast 1 unit above the max grid at the related column
+        // so, the essential info is the coordinates of the grid on that column
+        for (int i = 0; i < aGridGroup.Length; i++) {
+            
+        }
+    }
 }
