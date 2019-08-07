@@ -18,6 +18,7 @@ public class GameController : MonoBehaviour {
 
     public List<GameObject> generationPool = new List<GameObject>();
 
+
     private void Awake() {
         if (GameController.gc==null) {
             GameController.gc = this;
@@ -223,6 +224,20 @@ public class GameController : MonoBehaviour {
         aHexObject.neighbor330 = gridsAndContents.ContainsKey(aHexObject.neighborIndex330) ? gridsAndContents[aHexObject.neighborIndex330].hex.transform : null;
     }
 
+    /*
+    public void OnHexDestroyOnGrid(Transform aHexGrid) {
+        Vector2 gridIndex = aHexGrid.GetComponent<GridManager>().id;
+        Transform targetGrid = gridsAndContents[new Vector2(gridIndex.x, gridIndex.y + 1)].grid.transform;
+        if (targetGrid.childCount==0) {
+            targetGrid = gridsAndContents[new Vector2(gridIndex.x, gridIndex.y + 2)].grid.transform;
+        }
+        Transform targetHex = targetGrid.GetChild(0);
+        targetHex.GetComponent<HexObject>().fallTargetAsGrid = targetGrid;
+        StartCoroutine(targetHex.GetComponent<HexObject>().LerpDown());
+    }
+    */
+
+    /*
     public void ProcessPostBlowEvents(Transform[] aGridGroup) {
         // 1. detect empty grids (incoming aGridGroup has these objects)
         // 2. check if the grid above them are occupied; if not, continue checking until the top row
@@ -287,6 +302,7 @@ public class GameController : MonoBehaviour {
 
         }
     }
+    */
 
 
     public void GenerateNewObjectsForColumn(Transform[] aGridGroup) {

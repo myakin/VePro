@@ -13,7 +13,7 @@ public class RotationManager : MonoBehaviour {
     public bool isAnimating;
 
     private Transform outlinerOldParent;
-
+    private List<Transform> blowList = new List<Transform>();
 
     public void SetObjects(Transform anOriginalObj, Transform aWing1Obj, Transform aWing2Obj) {
         originalObj = anOriginalObj;
@@ -65,11 +65,20 @@ public class RotationManager : MonoBehaviour {
             InputManager.im.isRotationOn = false;
             isAnimating = false;
             anOutlinerBody.parent.SetParent(outlinerOldParent);
+            BlowTheList();
         } else {
             aRotationCount++;
             yield return AnimateRotation(anOutlinerBody, aRotationCount);
         }
 
+    }
+    private void BlowTheList() {
+        for (int i = 0; i < blowList.Count; i++) {
+            blowList[i].SetParent(null);
+            GameController.gc.generationPool.Add(blowList[i].gameObject);
+            blowList[i].gameObject.SetActive(false);
+        }
+        blowList.Clear();
     }
 
     private void RotateObjectGrids() {
@@ -113,49 +122,76 @@ public class RotationManager : MonoBehaviour {
     }
 
     private void BlowObjects(Transform anOriginalObject, Transform[] aNeighborList) {
-        anOriginalObject.SetParent(null);
         anOriginalObject.gameObject.SetActive(false);
+        anOriginalObject.SetParent(null);
         Transform gridForOriginal = anOriginalObject.GetComponent<HexObject>().parentingGrid;
         GameController.gc.generationPool.Add(anOriginalObject.gameObject);
-        //TODO: place a particle effect on this position and activate it
 
-        aNeighborList[0].SetParent(null);
         aNeighborList[0].gameObject.SetActive(false);
+        aNeighborList[0].SetParent(null);
         Transform neighborGrid0 = aNeighborList[0].GetComponent<HexObject>().parentingGrid;
         GameController.gc.generationPool.Add(aNeighborList[0].gameObject);
-        //TODO: place a particle effect on this position and activate it
 
         aNeighborList[1].SetParent(null);
         aNeighborList[1].gameObject.SetActive(false);
         Transform neighborGrid1 = aNeighborList[1].GetComponent<HexObject>().parentingGrid;
         GameController.gc.generationPool.Add(aNeighborList[1].gameObject);
-        //TODO: place a particle effect on this position and activate it
 
-
+        /*
         Transform[] emptyGrids = new Transform[] { gridForOriginal, neighborGrid0, neighborGrid1 };
         GameController.gc.ProcessPostBlowEvents(emptyGrids);
+        */
     }
 
 
     private bool CheckForBlowingObjects() {
         bool somethingBlew = false;
+        blowList.Clear();
 
         Transform[] originalBlow = ShouldBlow(originalObj);
         if (originalBlow[0]!=null) {
             somethingBlew = true;
-            BlowObjects(originalObj, originalBlow);
+            if (!blowList.Contains(originalObj)) {
+                blowList.Add(originalObj);
+            }
+            if (!blowList.Contains(originalBlow[0])) {
+                blowList.Add(originalBlow[0]);
+            }
+            if (!blowList.Contains(originalBlow[1])) {
+                blowList.Add(originalBlow[1]);
+            }
+
+            // BlowObjects(originalObj, originalBlow);
         }
 
         Transform[] wing1Blow = ShouldBlow(wing1Obj);
         if (wing1Blow[0] != null) {
             somethingBlew = true;
-            BlowObjects(wing1Obj, wing1Blow);
+            // BlowObjects(wing1Obj, wing1Blow);
+            if (!blowList.Contains(wing1Obj)) {
+                blowList.Add(wing1Obj);
+            }
+            if (!blowList.Contains(wing1Blow[0])) {
+                blowList.Add(wing1Blow[0]);
+            }
+            if (!blowList.Contains(wing1Blow[1])) {
+                blowList.Add(wing1Blow[1]);
+            }
         }
 
         Transform[] wing2Blow = ShouldBlow(wing2Obj);
         if (wing2Blow[0] != null) {
             somethingBlew = true;
-            BlowObjects(wing2Obj, wing2Blow);
+            //BlowObjects(wing2Obj, wing2Blow);
+            if (!blowList.Contains(wing2Obj)) {
+                blowList.Add(wing2Obj);
+            }
+            if (!blowList.Contains(wing2Blow[0])) {
+                blowList.Add(wing2Blow[0]);
+            }
+            if (!blowList.Contains(wing2Blow[1])) {
+                blowList.Add(wing2Blow[1]);
+            }
         }
         return somethingBlew;
     }

@@ -20,8 +20,11 @@ public class HexObject : MonoBehaviour {
     public Vector2 neighborIndex270;
     public Vector2 neighborIndex330;
 
+    public Transform fallTargetAsGrid;
+    private bool isFalling;
+    public bool isBlown;
 
-
+   
 
     public int[] sides;
     public float sideLength;
@@ -29,6 +32,13 @@ public class HexObject : MonoBehaviour {
     private int activeAngleIndex = 0;
 
     private float sqrRoot3 = Mathf.Sqrt(3);
+
+
+
+    private void OnDisable() {
+        isBlown = true;
+        parentingGrid.GetComponent<GridManager>().MoveColumn();
+    }
 
     public float ExecuteRotatorAngle() {
         activeAngleIndex++;
@@ -134,7 +144,7 @@ public class HexObject : MonoBehaviour {
             newAngle -= 120;
         }
         newAngle = newAngle < 0 ? newAngle + 360 : (newAngle > 360 ? newAngle - 360 : newAngle);
-        activeAngleIndex = System.Array.IndexOf(angles, newAngle);
+        activeAngleIndex = System.Array.IndexOf(angles, (int)newAngle);
     }
 
     public void SetNeighborIndexes() {
@@ -164,4 +174,40 @@ public class HexObject : MonoBehaviour {
         return currentGrid;
 
     }
+
+    public void SetFallTargetGrid(Transform aTargetGrid) {
+        if (fallTargetAsGrid==null) {
+            fallTargetAsGrid = aTargetGrid;
+            //Debug.Log("Target grid set: y = " + fallTargetAsGrid.GetComponent<GridManager>().id.y);
+            StartCoroutine(LerpDown(aTargetGrid));
+        } else {
+            if (aTargetGrid.GetComponent<GridManager>().id.y < fallTargetAsGrid.GetComponent<GridManager>().id.y) {
+                //Debug.Log("Target grid updated: OLD y = " + fallTargetAsGrid.GetComponent<GridManager>().id.y);
+                fallTargetAsGrid = aTargetGrid;
+                //Debug.Log("Target grid updated: NEW y = " + fallTargetAsGrid.GetComponent<GridManager>().id.y);
+            }
+        }
+            
+    }
+    public IEnumerator LerpDown(Transform aTargetGrid) {
+        isFalling = true;
+        fallTargetAsGrid = aTargetGrid;
+        Vector3 initialPos = transform.position;
+
+        float timer = 0;
+        float animationDuration = 1f;
+        while (timer < animationDuration) {
+            transform.position = Vector3.Lerp(initialPos, fallTargetAsGrid.transform.position, timer / animationDuration);
+            timer += Time.deltaTime;
+            yield return null;
+        }
+        transform.position = fallTargetAsGrid.transform.position;
+        transform.SetParent(fallTargetAsGrid);
+
+        StopCoroutine(LerpDown(fallTargetAsGrid));
+        isFalling = false;
+        // lerp down the next (upper) hex
+        parentingGrid.GetComponent<GridManager>().MoveColumn();
+    }
+
 }
