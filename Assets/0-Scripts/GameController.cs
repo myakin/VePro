@@ -242,6 +242,10 @@ public class GameController : MonoBehaviour {
                     aTargetHex = gridsAndContents[new Vector2(gridCoordinatesOfEmptyGrid.x, gridCoordinatesOfEmptyGrid.y + 2)].grid.transform.GetChild(0);
                 }
                 columnsChecked[i] = (int)gridCoordinatesOfEmptyGrid.x;
+                Transform targetGrid = aGridGroup[i];
+                if (!CheckIfLowerNeightborGridIsOccupied(aGridGroup[i])) {
+                    targetGrid = gridsAndContents[new Vector2(gridCoordinatesOfEmptyGrid.x, gridCoordinatesOfEmptyGrid.y - 1)].grid.transform;
+                }
                 StartCoroutine(LerpContentsDownOnColumn(aTargetHex, aGridGroup[i]));
             }
         }
@@ -251,6 +255,15 @@ public class GameController : MonoBehaviour {
         Vector2 gridCoordinatesOfEmptyGrid = aGrid.GetComponent<GridManager>().id;
         if (gridCoordinatesOfEmptyGrid.y + 1 < gridSize.y) {
             if (gridsAndContents[new Vector2(gridCoordinatesOfEmptyGrid.x, gridCoordinatesOfEmptyGrid.y + 1)].grid.transform.childCount > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+    private bool CheckIfLowerNeightborGridIsOccupied(Transform aGrid) {
+        Vector2 gridCoordinatesOfEmptyGrid = aGrid.GetComponent<GridManager>().id;
+        if (gridCoordinatesOfEmptyGrid.y - 1 < gridSize.y) {
+            if (gridsAndContents[new Vector2(gridCoordinatesOfEmptyGrid.x, gridCoordinatesOfEmptyGrid.y - 1)].grid.transform.childCount > 0) {
                 return true;
             }
         }
@@ -274,7 +287,7 @@ public class GameController : MonoBehaviour {
                 yield return new WaitForSeconds(0.05f);
             }
             aTargetHex.transform.position = finalPos;
-            
+
             StopCoroutine(LerpContentsDownOnColumn(aTargetHex, aTargetGrid));
 
             // lerp down the next (upper) hex
