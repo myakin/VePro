@@ -30,6 +30,11 @@ public class HexObject : MonoBehaviour {
 
     private float sqrRoot3 = Mathf.Sqrt(3);
 
+    private void OnDisable() {
+        GameController.gc.IncreaseScore();
+
+    }
+
     public float ExecuteRotatorAngle() {
         activeAngleIndex++;
         if (activeAngleIndex == 6) {

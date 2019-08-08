@@ -18,6 +18,8 @@ public class GameController : MonoBehaviour {
 
     public List<GameObject> generationPool = new List<GameObject>();
 
+    public int score = 0;
+
     private void Awake() {
         if (GameController.gc==null) {
             GameController.gc = this;
@@ -247,8 +249,10 @@ public class GameController : MonoBehaviour {
                     targetGrid = gridsAndContents[new Vector2(gridCoordinatesOfEmptyGrid.x, gridCoordinatesOfEmptyGrid.y - 1)].grid.transform;
                 }
                 StartCoroutine(LerpContentsDownOnColumn(aTargetHex, aGridGroup[i]));
+
             }
         }
+        GenerateNewObjectsForColumn(aGridGroup);
 
     }
     private bool CheckIfUpperNeightborGridIsOccupied(Transform aGrid) {
@@ -287,6 +291,7 @@ public class GameController : MonoBehaviour {
                 yield return new WaitForSeconds(0.05f);
             }
             aTargetHex.transform.position = finalPos;
+            aTargetHex.transform.SetParent(aTargetGrid);
 
             StopCoroutine(LerpContentsDownOnColumn(aTargetHex, aTargetGrid));
 
@@ -300,14 +305,64 @@ public class GameController : MonoBehaviour {
             StopCoroutine(LerpContentsDownOnColumn(aTargetHex, aTargetGrid));
 
         }
+
     }
 
 
     public void GenerateNewObjectsForColumn(Transform[] aGridGroup) {
-        // we have to generate new hexes atleast 1 unit above the max grid at the related column
+        // we have to generate new hexes at the max grid at the related column
         // so, the essential info is the coordinates of the grid on that column
         for (int i = 0; i < aGridGroup.Length; i++) {
-            
+            int column = (int)aGridGroup[i].GetComponent<GridManager>().id.x;
+            Vector2 generationGridIndex = new Vector2(column, gridSize.y - 1);
+            GameObject newHex = generationPool[0].gameObject;
+            generationPool.RemoveAt(0);
+
+            Transform generationGrid = gridsAndContents[generationGridIndex].grid.transform;
+            newHex.transform.position = generationGrid.transform.position;
+            newHex.SetActive(true);
+
+            Vector2 targetGridIndex = new Vector2(generationGridIndex.x, generationGridIndex.y-1);
+
+            StartCoroutine(LerpGenerationsDownOnColumn(newHex.transform, targetGridIndex));
         }
+    }
+    private IEnumerator LerpGenerationsDownOnColumn(Transform aTargetHex, Vector2 aTargetGridIndex) {
+        if (aTargetGridIndex.y >= 0) {
+
+            if (gridsAndContents[aTargetGridIndex].grid.transform.childCount == 0) {
+                Vector3 initialPos = aTargetHex.transform.position;
+                Vector3 finalPos = gridsAndContents[aTargetGridIndex].grid.transform.position;
+
+                float timer = 0;
+                float animationDuration = 1f;
+                while (timer < animationDuration) {
+                    aTargetHex.transform.position = Vector3.Lerp(initialPos, finalPos, timer / animationDuration);
+                    timer += Time.deltaTime;
+                    yield return new WaitForSeconds(0.05f);
+                }
+                aTargetHex.transform.position = finalPos;
+
+                StopCoroutine(LerpGenerationsDownOnColumn(aTargetHex, aTargetGridIndex));
+
+                Vector3 nextGridIndex = new Vector3(aTargetGridIndex.x, aTargetGridIndex.y - 1);
+                StartCoroutine(LerpGenerationsDownOnColumn(aTargetHex, nextGridIndex));
+
+            } else {
+                Vector3 upperGridIndex = new Vector2(aTargetGridIndex.x, aTargetGridIndex.y + 1);
+                aTargetHex.SetParent(gridsAndContents[upperGridIndex].grid.transform);
+                StopCoroutine(LerpGenerationsDownOnColumn(aTargetHex, aTargetGridIndex));
+            }
+
+
+        } else {
+            StopCoroutine(LerpGenerationsDownOnColumn(aTargetHex, aTargetGridIndex));
+
+        }
+    }
+
+    public void IncreaseScore() {
+        score += 5;
+        PlayerUIManager.puim.SetScore(score.ToString());
     }
 }
